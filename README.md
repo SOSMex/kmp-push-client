@@ -4,7 +4,7 @@
 
 Use Firebase Cloud Messaging or OneSignal from shared Kotlin Multiplatform code without hiding the differences between them.
 
-The shared API covers permission state, push enablement, registration, foreground notifications and notification opens. Android includes native provider gateways. The current iOS target includes callback bridges, but the consuming app must still supply the provider gateway and native SDK integration.
+The shared API covers permission state, push enablement, registration, foreground notifications and notification opens. FCM uses the same client factory and callback API on Android and iOS; each app still owns its native Firebase setup.
 
 > The source is at `0.1.0`. Packages have not been released to GitHub Packages or Maven Central yet.
 
@@ -17,8 +17,8 @@ This project keeps that plumbing in one place while staying clear about what eac
 ## What you get
 
 - Shared Android and iOS targets.
-- Native Firebase and OneSignal gateways on Android.
-- Callback bridges on iOS.
+- `FcmAndroidGateway` and `FcmIosGateway` behind one `FcmClientFactory`.
+- An Android OneSignal gateway and an iOS callback bridge.
 - Separate adapters for FCM and OneSignal.
 - Typed FCM tokens and OneSignal subscription IDs.
 - Permission and enable/disable state.
@@ -63,19 +63,17 @@ Those coordinates become usable after the first package release. Until then, use
 The app provides permission handling and durable storage for opened-event IDs. The SDK handles the shared state and event stream.
 
 ```kotlin
-val gateway = when (val result = FirebaseMessagingAndroidGateway.create()) {
+val pushClient = when (val result = FcmClientFactory.create(
+    permissionGateway = appPermissionGateway,
+    gateway = FcmAndroidGateway.create(),
+    ledger = appEventLedger,
+)) {
     is FcmInitializationResult.Ready -> result.value
     is FcmInitializationResult.Unavailable -> {
         showPushUnavailable(result.reason)
         return
     }
 }
-
-val pushClient = FcmPushClient(
-    permissionGateway = appPermissionGateway,
-    gateway = gateway,
-    ledger = appEventLedger,
-)
 
 applicationScope.launch {
     if (pushClient.requestPermission() == PermissionState.Granted) {
@@ -102,9 +100,9 @@ applicationScope.launch {
 
 Forward notification opens with `offerOpened(...)` and foreground data messages with `offerForeground(...)`. Use the current generation for every native callback so callbacks from an old login or provider session can be ignored.
 
-This example is Android-specific because `FirebaseMessagingAndroidGateway.create()` lives in `androidMain`.
+On iOS, configure Firebase in Swift and implement `FcmIosHostApi` with `Messaging.messaging().isAutoInitEnabled`. Pass that host API and the result of `FirebaseApp.app() != nil` to `FcmIosGateway.create(...)`, then give its result to the same `FcmClientFactory.create(...)` call shown above.
 
-On iOS, the app configures Firebase in Swift and supplies an implementation of `FcmGateway` when constructing `FcmPushClient`. After `FirebaseApp.app()` is available, `FcmIosCallbackBridge.create(...)` connects Firebase and notification-center callbacks to that client. There is no packaged `FirebaseMessagingIosGateway` in `0.1.0`, so iOS provider integration is not turnkey yet.
+Both platforms forward token, foreground and open callbacks directly to the resulting `FcmPushClient`. The platform bootstrap differs; the client contract does not.
 
 ## OneSignal example
 
@@ -147,7 +145,7 @@ val payload = mapOf(
 | Module | What it contains |
 | --- | --- |
 | `push-core` | Shared models, state, events and deduplication contracts |
-| `push-fcm` | FCM client, Android native gateway and iOS callback bridge |
+| `push-fcm` | FCM client factory and Android/iOS gateways |
 | `push-onesignal` | OneSignal client, identity support, Android native gateway and iOS callback bridge |
 | `push-test` | Fakes and an in-memory ledger for tests |
 | `sample` | Small JVM example with no provider credentials |

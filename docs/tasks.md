@@ -11,6 +11,8 @@
 - [x] Implement FCM orchestration with explicit unsupported identity.
 - [x] Implement OneSignal orchestration with login/logout capability.
 - [x] Add Android vendor gateways and iOS host callback bridges.
+- [x] Normalize the FCM API as `FcmClientFactory`, `FcmAndroidGateway` and `FcmIosGateway`.
+- [x] Replace the callback-only FCM iOS bridge with a host-backed gateway and shared client callbacks.
 
 ## Test support and sample
 
