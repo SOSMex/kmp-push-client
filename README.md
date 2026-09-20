@@ -2,7 +2,52 @@
 
 A small Kotlin Multiplatform push client contract for Android and iOS. It supports one provider per build and preserves the real differences between Firebase Cloud Messaging and OneSignal.
 
-This is a local evaluation build. It has not been published to Maven Central or any remote repository.
+This is an independent repository and local 0.1.0 evaluation build. It has not been published to Maven Central or any remote repository.
+
+## Motivation
+
+Push notification integrations often start as a few platform callbacks and grow into duplicated lifecycle logic, provider-specific assumptions in shared code, and claims that a token means a notification was delivered. Multiplatform wrappers can make that worse when they flatten APIs that are not equivalent.
+
+KMP Push Client exists to provide a deliberately small shared contract while keeping those differences visible:
+
+- FCM exposes a registration token and transport lifecycle; it has no equivalent to OneSignal login or external identity.
+- OneSignal exposes users, subscriptions and identity operations in addition to notification transport.
+- registration, provider acceptance, operating-system delivery and user opening are separate observations;
+- foreground receipt and notification opening are different events;
+- cold-start callbacks, duplicate delivery and identity changes need deterministic handoff rules;
+- tokens, subscription IDs, external IDs and payload values must not leak through diagnostics.
+
+The goal is not to replace either native SDK. The goal is to keep shared application code small, testable and honest while platform hosts continue to own native lifecycle integration.
+
+## Scope
+
+Version 0.1.0 includes:
+
+- Android and iOS targets;
+- exactly one selected provider adapter per application build;
+- FCM and OneSignal adapters;
+- permission state and permission request boundaries;
+- explicit enable/disable state;
+- typed `FcmToken` and `OneSignalSubscriptionId` destinations;
+- neutral, versioned semantic payloads;
+- foreground-received and opened events, including cold start;
+- atomic exactly-once handoff within a caller-supplied ledger scope;
+- generation fencing for stale identity/provider callbacks;
+- optional OneSignal identity and explicit unsupported FCM identity;
+- deterministic fakes for application tests;
+- local Maven publication metadata.
+
+Version 0.1.0 intentionally excludes:
+
+- sending APIs, backend orchestration and provider credentials;
+- permission UI or Compose components;
+- local notifications, topics, campaigns and analytics;
+- rich media, notification actions and in-app messages;
+- scheduling, web and desktop runtime targets;
+- two simultaneously active providers;
+- a built-in production persistence implementation.
+
+See [`docs/spec.md`](docs/spec.md) for the behavioral contract and [`docs/verification-report.md`](docs/verification-report.md) for the evidence actually collected.
 
 ## Modules
 
@@ -40,6 +85,88 @@ commonMain.dependencies {
 ```
 
 The final public group ID and repository are owner decisions and have not been reserved.
+
+## Usage example
+
+The following Android FCM example shows the intended ownership split. The application supplies permission UI/state and durable deduplication storage; the SDK owns provider-neutral state and event handoff.
+
+```kotlin
+val pushClient = FcmPushClient(
+    permissionGateway = appNotificationPermissionGateway,
+    gateway = FirebaseMessagingAndroidGateway(),
+    ledger = appDurableEventLedger,
+    initiallyEnabled = false,
+)
+
+// Called from application orchestration, never inferred from token presence.
+applicationScope.launch {
+    when (pushClient.requestPermission()) {
+        PermissionState.Granted -> pushClient.setEnabled(true)
+        PermissionState.Provisional -> pushClient.setEnabled(true)
+        else -> pushClient.setEnabled(false)
+    }
+}
+
+// Called by FirebaseMessagingService.onNewToken.
+fun onNewFcmToken(token: String) {
+    applicationScope.launch {
+        pushClient.observeToken(
+            token = token,
+            generation = pushClient.currentGeneration(),
+        )
+    }
+}
+
+// Called by the host's foreground and Activity/intent callbacks.
+fun onNotificationOpened(data: Map<String, String>, coldStart: Boolean) {
+    applicationScope.launch {
+        pushClient.offerOpened(
+            data = data,
+            generation = pushClient.currentGeneration(),
+            coldStart = coldStart,
+        )
+    }
+}
+
+applicationScope.launch {
+    pushClient.events.collect { event ->
+        when (event) {
+            is PushEvent.ForegroundReceived -> refreshAuthoritativeState(event.payload)
+            is PushEvent.Opened -> navigateFromVerifiedHint(event.payload)
+        }
+    }
+}
+```
+
+Payloads use a minimal semantic envelope:
+
+```kotlin
+val payload = mapOf(
+    "push_version" to "1",
+    "push_event_id" to "orders:updated:42",
+    "push_type" to "orders.updated",
+    "order_id" to "42",
+)
+```
+
+For tests, consumers can drive the same contract without a provider SDK:
+
+```kotlin
+val fake = FakePushClient(initiallyEnabled = true)
+
+val first = fake.emitOpened(payload, coldStart = true)   // Accepted
+val again = fake.emitOpened(payload, coldStart = true)   // Duplicate
+
+val oldGeneration = fake.currentGeneration()
+fake.advanceGeneration()
+val stale = fake.emitForeground(payload, oldGeneration) // StaleGeneration
+```
+
+The sample can be run with:
+
+```bash
+./gradlew :sample:run
+```
 
 ## Compatibility snapshot
 
