@@ -21,8 +21,14 @@ Choose exactly one provider adapter in an application build. The core and test l
 The project can be published into its local test Maven repository:
 
 ```bash
-./gradlew publishAllPublicationsToTestRepository
+./gradlew \
+  :push-core:publishAllPublicationsToTestRepository \
+  :push-fcm:publishAllPublicationsToTestRepository \
+  :push-onesignal:publishAllPublicationsToTestRepository \
+  :push-test:publishAllPublicationsToTestRepository
 ```
+
+Set `ANDROID_HOME` or an ignored `local.properties` with `sdk.dir=...` before Android tasks.
 
 For local composite development, depend directly on the modules. Proposed coordinates for a future public publication are:
 
