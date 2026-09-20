@@ -29,6 +29,58 @@ This project keeps that plumbing in one place while staying clear about what eac
 
 The library does not send notifications. It also does not provide notification UI, campaigns, analytics, topics or local notifications.
 
+## Architecture
+
+The app selects one provider module. Platform code performs the native bootstrap; provider clients then feed the same shared state and event engine.
+
+```mermaid
+flowchart LR
+    subgraph Host["Consuming app"]
+        Android["Android host"]
+        iOS["iOS host"]
+        Permission["PermissionGateway"]
+        Ledger["AtomicEventLedger"]
+    end
+
+    subgraph FCM["push-fcm"]
+        FcmAndroid["FcmAndroidGateway"]
+        FcmIosApi["FcmIosHostApi"]
+        FcmIos["FcmIosGateway"]
+        FcmFactory["FcmClientFactory"]
+        FcmClient["FcmPushClient"]
+    end
+
+    subgraph OneSignal["push-onesignal"]
+        OneSignalAndroid["OneSignalAndroidGateway"]
+        OneSignalIos["iOS host gateway + callback bridge"]
+        OneSignalClient["OneSignalPushClient"]
+    end
+
+    subgraph Core["push-core"]
+        Engine["PushClientEngine"]
+        State["permission · enablement · destination"]
+        Events["foreground · opened"]
+    end
+
+    Android --> FcmAndroid --> FcmFactory
+    iOS --> FcmIosApi --> FcmIos --> FcmFactory
+    FcmFactory --> FcmClient --> Engine
+
+    Android --> OneSignalAndroid --> OneSignalClient
+    iOS --> OneSignalIos --> OneSignalClient
+    OneSignalClient --> Engine
+
+    Permission --> FcmFactory
+    Ledger --> FcmFactory
+    Permission --> OneSignalClient
+    Ledger --> OneSignalClient
+
+    Android -. "native callbacks" .-> FcmClient
+    iOS -. "native callbacks" .-> FcmClient
+    Engine --> State
+    Engine --> Events
+```
+
 ## Choose a provider
 
 Add `push-core` and one provider module:
