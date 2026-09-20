@@ -29,6 +29,20 @@ This project keeps that plumbing in one place while staying clear about what eac
 
 The library does not send notifications. It also does not provide notification UI, campaigns, analytics, topics or local notifications.
 
+## Architecture
+
+The app selects one provider module. That adapter connects the native SDK to the shared push contract.
+
+```mermaid
+flowchart LR
+    Host["Android or iOS app"] --> Provider{"Choose one provider"}
+    Provider --> FCM["push-fcm"]
+    Provider --> OneSignal["push-onesignal"]
+    FCM --> Core["push-core"]
+    OneSignal --> Core
+    Core --> Output["Shared state and events"]
+```
+
 ## Choose a provider
 
 Add `push-core` and one provider module:
