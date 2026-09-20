@@ -34,11 +34,12 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Install Android SDK 36
-        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+      - name: Verify Android SDK 36
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${ANDROID_SDK_ROOT}"
+          test -d "${ANDROID_SDK_ROOT}/platforms/android-36"
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
@@ -86,11 +87,12 @@ jobs:
       - name: Verify Apple Silicon runner
         run: test "$(uname -m)" = arm64
 
-      - name: Set up Android SDK for publication metadata
-        uses: android-actions/setup-android@v3
-
-      - name: Install Android SDK 36
-        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+      - name: Verify Android SDK 36 for publication metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${ANDROID_SDK_ROOT}"
+          test -d "${ANDROID_SDK_ROOT}/platforms/android-36"
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
