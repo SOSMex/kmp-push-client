@@ -58,22 +58,51 @@ Those coordinates become usable after the first package release. Until then, use
   :push-test:publishAllPublicationsToTestRepository
 ```
 
-## Basic FCM example
+## FCM setup
 
-The app provides permission handling and durable storage for opened-event IDs. The SDK handles the shared state and event stream.
+The app provides permission handling and durable storage for opened-event IDs. Put the client construction in shared code:
 
 ```kotlin
-val pushClient = when (val result = FcmClientFactory.create(
-    permissionGateway = appPermissionGateway,
-    gateway = FcmAndroidGateway.create(),
-    ledger = appEventLedger,
-)) {
-    is FcmInitializationResult.Ready -> result.value
-    is FcmInitializationResult.Unavailable -> {
-        showPushUnavailable(result.reason)
-        return
+fun createFcmClient(
+    gateway: FcmInitializationResult<FcmGateway>,
+): FcmPushClient? =
+    when (val result = FcmClientFactory.create(
+        permissionGateway = appPermissionGateway,
+        gateway = gateway,
+        ledger = appEventLedger,
+    )) {
+        is FcmInitializationResult.Ready -> result.value
+        is FcmInitializationResult.Unavailable -> {
+            showPushUnavailable(result.reason)
+            null
+        }
     }
-}
+```
+
+Android supplies its gateway from `androidMain`:
+
+```kotlin
+val pushClient = createFcmClient(
+    FcmAndroidGateway.create(),
+) ?: return
+```
+
+iOS supplies its gateway from `iosMain`:
+
+```kotlin
+val pushClient = createFcmClient(
+    FcmIosGateway.create(
+        hostApi = iosFirebaseHostApi,
+        isDefaultFirebaseAppConfigured = firebaseAppIsConfigured,
+    ),
+) ?: return
+```
+
+The Swift host configures Firebase, implements `FcmIosHostApi` with `Messaging.messaging().isAutoInitEnabled`, and passes `FirebaseApp.app() != nil` as `firebaseAppIsConfigured`.
+
+Once the client is ready, permission, token and event handling are the same on both targets:
+
+```kotlin
 
 applicationScope.launch {
     if (pushClient.requestPermission() == PermissionState.Granted) {
@@ -100,11 +129,9 @@ applicationScope.launch {
 
 Forward notification opens with `offerOpened(...)` and foreground data messages with `offerForeground(...)`. Use the current generation for every native callback so callbacks from an old login or provider session can be ignored.
 
-On iOS, configure Firebase in Swift and implement `FcmIosHostApi` with `Messaging.messaging().isAutoInitEnabled`. Pass that host API and the result of `FirebaseApp.app() != nil` to `FcmIosGateway.create(...)`, then give its result to the same `FcmClientFactory.create(...)` call shown above.
+Both platforms forward token, foreground and open callbacks directly to `FcmPushClient`. Only the native bootstrap differs.
 
-Both platforms forward token, foreground and open callbacks directly to the resulting `FcmPushClient`. The platform bootstrap differs; the client contract does not.
-
-## OneSignal example
+## Android OneSignal example
 
 ```kotlin
 val gateway = OneSignalAndroidGateway(
