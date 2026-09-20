@@ -21,7 +21,7 @@
 - `git diff --check` on the local skill clone: passed.
 - A subsequent read-only Codex turn confirmed both skills appeared by name in the catalog.
 - A second subsequent turn confirmed all corrected template links resolved inside each installed skill directory.
-- The local skill clone has uncommitted focused changes only; no remote, release, PR or push was created.
+- The focused correction is committed only in the local clone as `0cad6a512c144233b13073b728ca78eaaaf12c3e`; no remote, release, PR or push was created.
 
 ## Invocation influence
 
