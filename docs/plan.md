@@ -2,7 +2,7 @@
 
 ## Outcome advanced
 
-Implement AC-01 through AC-05 from `spec.md` as the smallest compileable provider-honest SDK slice.
+Implement AC-01 through AC-07 from `spec.md` as the smallest compileable provider-honest SDK slice and a useful credential-free reference flow.
 
 ## Existing project shape
 
@@ -27,6 +27,7 @@ A fake/native gateway emits permission, enablement, typed destination, foregroun
 | OneSignal SDK calls | `push-onesignal/androidMain` | Android vendor API |
 | OneSignal callback forwarding | `push-onesignal/iosMain` | iOS host/native boundary |
 | Fakes | `push-test/commonMain` | Consumer-test support |
+| Credential-free reference flow | `sample` JVM application | Exercises real provider clients while keeping native callbacks explicitly simulated |
 
 ## Contract and state changes
 
@@ -49,6 +50,7 @@ A fake/native gateway emits permission, enablement, typed destination, foregroun
 6. Run discovered build/test/publication checks and write verification report.
 7. Document provider-specific configuration and verify fail-closed FCM initialization without regressing OneSignal-only builds.
 8. Add cross-platform pull-request CI and release-gated GitHub Packages delivery without granting provider or Maven Central credentials.
+9. Replace the one-off fake sample with a provider-selectable reference flow and test both paths in CI.
 
 ## Verification matrix
 
@@ -60,6 +62,7 @@ A fake/native gateway emits permission, enablement, typed destination, foregroun
 | OneSignal-only dependency path | Gradle dependency inspection plus Android/iOS compile | No direct `push-fcm` dependency or Firebase app configuration prerequisite |
 | iOS FCM gateway and OneSignal callback bridge | iOS simulator tests plus arm64 compilation | Automated-tested/compiled |
 | Maven consumability | Temporary Maven repository + sample | Automated-tested |
+| FCM and OneSignal sample paths | JVM sample tests and deterministic run | Automated-tested; native callbacks remain simulated |
 | Real permission/delivery/open | Physical Android and iPhone | Physically-tested, remains open locally |
 | CI workflow | GitHub-hosted Ubuntu and macOS runners | Required pull-request checks after workflow publication |
 | GitHub Packages delivery | Published semantic GitHub Release on a `main` commit | Registry publication; no Maven Central/public-release claim |

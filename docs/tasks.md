@@ -18,6 +18,8 @@
 
 - [x] Implement fake client, gateways and atomic in-memory ledger.
 - [x] Add a credential-free sample demonstrating cold-start duplicate handling and fencing.
+- [x] Expand the sample to exercise both real provider clients, destination state and the shared event listener.
+- [x] Test both sample provider paths and keep native callbacks explicitly simulated.
 
 ## Verification
 

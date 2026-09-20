@@ -189,7 +189,24 @@ val payload = mapOf(
 | `push-fcm` | FCM client factory and Android/iOS gateways |
 | `push-onesignal` | OneSignal client, identity support, Android native gateway and iOS callback bridge |
 | `push-test` | Fakes and an in-memory ledger for tests |
-| `sample` | Small JVM example with no provider credentials |
+| `sample` | Credential-free reference flow for both providers |
+
+## Try the sample
+
+The sample runs the same small flow with FCM and OneSignal: permission, enablement, registration, a foreground notification, a cold-start open and a duplicate open. It also collects `client.events`, which is the listener application code normally uses.
+
+```bash
+./gradlew :sample:run
+```
+
+To run only one provider:
+
+```bash
+./gradlew :sample:run --args='--provider=fcm'
+./gradlew :sample:run --args='--provider=onesignal'
+```
+
+It uses the real `FcmPushClient` and `OneSignalPushClient` APIs with in-memory host gateways. Native callbacks are simulated, so the sample needs no Firebase or OneSignal credentials and does not claim real notification delivery.
 
 ## Build and test
 
@@ -203,6 +220,7 @@ Set `ANDROID_HOME` or add an ignored `local.properties` with `sdk.dir=...`, then
   :push-test:jvmTest \
   :push-fcm:compileAndroidMain \
   :push-onesignal:compileAndroidMain \
+  :sample:test \
   :sample:run
 ```
 

@@ -31,6 +31,7 @@ The client reports observations made by the app or provider SDK. It never descri
 13. Fail closed when `push-fcm` is selected without a configured default Firebase app; configuration failures expose bounded reason enums and no configuration values.
 14. Keep provider configuration independent: a OneSignal-only host does not require `push-fcm`, a default Firebase app, `google-services.json`, or `GoogleService-Info.plist`.
 15. Expose FCM consistently as `FcmClientFactory`, `FcmAndroidGateway` and `FcmIosGateway`; vendor SDK class names remain implementation details.
+16. Provide a credential-free reference sample that exercises both provider clients, collects shared events and clearly labels native callbacks as simulated.
 
 ## Acceptance scenarios
 
@@ -76,6 +77,12 @@ Given either Android or iOS produces a ready FCM gateway, when it is passed to `
 
 Given only the OneSignal adapter is selected, then no default Firebase app or Firebase configuration file is required by the KMP adapter. Android delivery may still use FCM internally through OneSignal; iOS delivery uses APNs.
 
+### AC-07 Reference sample
+
+Given no provider credentials, when the sample runs for FCM or OneSignal, then it uses the corresponding real provider client and demonstrates permission, enablement, destination registration, foreground receipt, cold-start open and duplicate-open handling.
+
+The sample collects the public event flow and redacts destination values. It identifies provider callbacks as simulated and never presents the run as notification delivery evidence.
+
 ## Non-goals
 
 Sending/backend APIs, credentials, permission UI/Compose, local notifications, campaigns, analytics, topics, rich media/actions, in-app messages, scheduling, web/desktop runtime support, and two active providers in one build.
@@ -103,3 +110,4 @@ Sending/backend APIs, credentials, permission UI/Compose, local notifications, c
 - Android provider source: target compilation plus focused gateway tests where SDK APIs permit.
 - iOS gateway/bridge source: Kotlin/Native tests and target compilation; real notification runtime remains a physical-device gate.
 - Maven consumption: publish to a temporary local repository and compile a consumer/sample.
+- Reference sample: automated tests for both providers plus a successful deterministic run.

@@ -53,6 +53,7 @@ jobs:
           :push-test:jvmTest
           :push-fcm:compileAndroidMain
           :push-onesignal:compileAndroidMain
+          :sample:test
           :sample:run
           --stacktrace
 

@@ -1,5 +1,17 @@
 # Verification report
 
+## Provider reference sample — 2026-09-20
+
+The JVM sample now runs the same credential-free scenario through `FcmPushClient` and `OneSignalPushClient`. Its in-memory gateways replace only the native provider callbacks; permission, enablement, destination state, event emission and duplicate-open handling go through the public SDK contracts.
+
+| Claim | Target/environment | Evidence level | Procedure | Result | Residual gate |
+| --- | --- | --- | --- | --- | --- |
+| FCM sample flow uses the real FCM client contract | JVM/JBR 17 | `Automated-tested` | `:sample:test` | Permission, enablement, redacted token, foreground, cold-start open and duplicate assertions passed | Android/iOS native FCM host runtime |
+| OneSignal sample flow uses the real OneSignal client contract | JVM/JBR 17 | `Automated-tested` | `:sample:test` | Permission, identity generation, redacted subscription, foreground, cold-start open and duplicate assertions passed | Android/iOS native OneSignal host runtime |
+| Default sample demonstrates both providers and event collection | JVM/JBR 17 | `Automated-tested` | `:sample:run` | Both provider scenarios completed; foreground and opened events were observed by the listener | No provider delivery claim; native callbacks are simulated |
+
+This makes the sample useful as an API walkthrough. It remains a terminal reference, not a configured Android or iOS application, and does not prove registration or delivery from either provider.
+
 ## Symmetric FCM API refactor — 2026-09-19
 
 The FCM public surface now uses one provider vocabulary and one client-construction path. `FirebaseMessagingAndroidGateway` and `FcmIosCallbackBridge` were replaced by `FcmAndroidGateway`, `FcmIosGateway`, `FcmIosHostApi` and `FcmClientFactory`.
