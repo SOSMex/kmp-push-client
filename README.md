@@ -1,8 +1,10 @@
 # KMP Push Client 0.1.0
 
+[![CI](https://github.com/SOSMex/kmp-push-client/actions/workflows/ci.yml/badge.svg)](https://github.com/SOSMex/kmp-push-client/actions/workflows/ci.yml)
+
 A small Kotlin Multiplatform push client contract for Android and iOS. It supports one provider per build and preserves the real differences between Firebase Cloud Messaging and OneSignal.
 
-This is an independent repository and local 0.1.0 evaluation build. It has not been published to Maven Central or any remote repository.
+This is an independent repository and 0.1.0 evaluation build hosted privately on GitHub. No package version has been published to GitHub Packages or Maven Central yet.
 
 ## Motivation
 
@@ -59,7 +61,14 @@ See [`docs/spec.md`](docs/spec.md) for the behavioral contract and [`docs/verifi
 | `push-test` | Deterministic fake client, permission/transport fakes and atomic in-memory ledger |
 | `sample` | Credential-free JVM example |
 
-Choose exactly one provider adapter in an application build. The core and test libraries may be shared.
+Choose exactly one provider adapter in an application build. The core and test libraries may be shared. Provider setup is independent:
+
+| Selected adapter | Android app configuration | iOS app configuration |
+| --- | --- | --- |
+| `push-fcm` | Firebase SDK, Google Services plugin and the app's `google-services.json` | Firebase SDK, the app's `GoogleService-Info.plist` and `FirebaseApp.configure()` |
+| `push-onesignal` | OneSignal App ID; configure the Android platform's Firebase credentials in OneSignal | OneSignal App ID and APNs credentials/capabilities |
+
+A OneSignal-only consumer does not add `push-fcm`, does not need a default `FirebaseApp`, and does not add either Firebase configuration file. On Android, OneSignal still uses FCM as its underlying Google push transport and brings Firebase Messaging transitively; OneSignal 5.9.8 initializes its own named Firebase app from the platform configuration associated with the OneSignal App ID. On iOS, OneSignal uses APNs rather than Firebase.
 
 ## Installation
 
@@ -75,25 +84,45 @@ The project can be published into its local test Maven repository:
 
 Set `ANDROID_HOME` or an ignored `local.properties` with `sdk.dir=...` before Android tasks.
 
-For local composite development, depend directly on the modules. Proposed coordinates for a future public publication are:
+For local composite development, depend directly on the modules. GitHub Packages publications use these coordinates:
 
 ```kotlin
 commonMain.dependencies {
     implementation("io.github.sosmex.push:push-core:0.1.0")
-    implementation("io.github.sosmex.push:push-fcm:0.1.0") // or push-onesignal
+    implementation("io.github.sosmex.push:push-fcm:0.1.0")
+    // Or use push-onesignal instead. Do not add both adapters for one-provider builds.
 }
 ```
 
-The final public group ID and repository are owner decisions and have not been reserved.
+The repository and its GitHub Packages registry are currently private. Public Maven Central coordinates, signing and availability remain separate owner decisions.
+
+## CI/CD
+
+The repository includes two GitHub Actions workflows:
+
+- `CI` runs for pull requests targeting `main`, pushes to `main`, and manual dispatches. Ubuntu validates JVM behavior, Android bindings and the credential-free sample. A fixed Apple Silicon `macos-15` runner validates iOS simulator behavior, device-target compilation and the complete local Maven publication shape.
+- `Publish GitHub Packages` runs only when a GitHub Release is published. It requires a semantic tag such as `v0.1.0`, verifies that the released commit belongs to `main`, reruns the cross-platform release matrix and publishes all four library modules to the repository's GitHub Packages Maven registry.
+
+The publication workflow uses the scoped GitHub Actions token; no provider credentials, Firebase files or custom publishing secrets are required. It does not publish to Maven Central and it does not create a public release automatically.
+
+Authenticated consumers can add the private registry and use the coordinates above. See [`docs/ci-cd.md`](docs/ci-cd.md) for the release gate and Gradle repository example.
 
 ## Usage example
 
-The following Android FCM example shows the intended ownership split. The application supplies permission UI/state and durable deduplication storage; the SDK owns provider-neutral state and event handoff.
+The following Android FCM example shows the intended ownership split. The application supplies permission UI/state and durable deduplication storage; the SDK owns provider-neutral state and event handoff. Initialization fails closed when Firebase's default app is absent:
 
 ```kotlin
+val firebaseGateway = when (val result = FirebaseMessagingAndroidGateway.create()) {
+    is FcmInitializationResult.Ready -> result.value
+    is FcmInitializationResult.Unavailable -> {
+        reportPushUnavailable(result.reason) // enum only; do not log configuration values
+        return
+    }
+}
+
 val pushClient = FcmPushClient(
     permissionGateway = appNotificationPermissionGateway,
-    gateway = FirebaseMessagingAndroidGateway(),
+    gateway = firebaseGateway,
     ledger = appDurableEventLedger,
     initiallyEnabled = false,
 )
@@ -198,7 +227,9 @@ The in-memory ledger in `push-test` is for tests and samples. It is not a durabl
 
 Add the Google Services plugin and the app's own `google-services.json` in the consuming app. Credentials/configuration do not belong in this SDK.
 
-Create `FirebaseMessagingAndroidGateway` and `FcmPushClient`, then forward `FirebaseMessagingService.onNewToken` to `observeToken`. Forward foreground data messages to `offerForeground`. For a notification opened from an Activity intent, call `offerOpened` once with `coldStart = savedInstanceState == null` and clear the consumed extras.
+Call `FirebaseMessagingAndroidGateway.create()` before constructing `FcmPushClient`. It returns `Unavailable(DEFAULT_FIREBASE_APP_NOT_CONFIGURED)` instead of allowing `FirebaseMessaging.getInstance()` to fail when the Google Services plugin/file is absent or Firebase has not otherwise initialized the default app. An unexpected SDK failure returns `Unavailable(SDK_INITIALIZATION_FAILED)` without carrying exception/configuration details.
+
+After a `Ready` result, forward `FirebaseMessagingService.onNewToken` to `observeToken`. Forward foreground data messages to `offerForeground`. For a notification opened from an Activity intent, call `offerOpened` once with `coldStart = savedInstanceState == null` and clear the consumed extras.
 
 `setEnabled(false)` disables Firebase Messaging auto-init and hides the destination in client state. It does not claim to delete a token already issued by Firebase.
 
@@ -207,6 +238,8 @@ Android 13+ permission requests remain in the Activity/Compose host and return t
 ## Android: OneSignal
 
 Construct `OneSignalAndroidGateway(applicationContext, appId)` and `OneSignalPushClient`. Register OneSignal push-subscription, notification lifecycle and click observers in the host. Forward subscription IDs only after the currently logged external ID is confirmed, and attach the current generation to every callback.
+
+Do not add the Google Services plugin, `google-services.json`, or `push-fcm` solely for this adapter. Configure the Android Firebase service-account credentials in the OneSignal dashboard and initialize the native SDK with the corresponding OneSignal App ID. Although Firebase Messaging is an Android transport dependency of OneSignal, the consuming application does not own or initialize a default Firebase app for this path.
 
 The identity capability is real for OneSignal:
 
@@ -224,7 +257,27 @@ Do not log the external ID or subscription ID.
 
 The consuming Xcode app owns Firebase installation (Swift Package Manager is recommended by Firebase), `FirebaseApp.configure()`, APNs registration, `MessagingDelegate`, and `UNUserNotificationCenterDelegate`.
 
-Create `FcmIosCallbackBridge` from the exported Kotlin framework and forward:
+Before constructing the bridge, the Swift host must verify both bundle membership and runtime initialization. If either check fails, leave push unavailable and do not install Firebase delegates:
+
+```swift
+guard Bundle.main.url(forResource: "GoogleService-Info", withExtension: "plist") != nil else {
+    reportPushUnavailable(.missingFirebaseConfiguration)
+    return
+}
+
+if FirebaseApp.app() == nil {
+    FirebaseApp.configure()
+}
+
+guard FirebaseApp.app() != nil else {
+    reportPushUnavailable(.firebaseInitializationFailed)
+    return
+}
+```
+
+`FcmIosCallbackBridge.create(client:isDefaultFirebaseAppConfigured:)` accepts that final runtime check and returns the same fail-closed `FcmInitializationResult`. This module deliberately does not inspect the app bundle or link Firebase itself because the native Firebase dependency remains host-managed.
+
+After the factory returns `Ready`, use its `FcmIosCallbackBridge` value and forward:
 
 - `messaging(_:didReceiveRegistrationToken:)` to `didReceiveRegistrationToken`;
 - foreground notification data to `didReceiveForeground`;
@@ -235,6 +288,8 @@ When Firebase method swizzling is disabled, the host must map its APNs token acc
 ## iOS: OneSignal
 
 The consuming Xcode app owns OneSignalFramework installation and initialization. Register its subscription, foreground lifecycle, click and user-state observers, then forward them through `OneSignalIosCallbackBridge`. Callbacks observed before current external identity confirmation must use `identityConfirmed = false`; they will not publish a destination.
+
+This path does not use Firebase and must not require `GoogleService-Info.plist` or `FirebaseApp.configure()`. Configure APNs credentials for the iOS platform in OneSignal and add the native push capabilities required by its setup guide.
 
 ## Payload contract
 

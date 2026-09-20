@@ -1,5 +1,31 @@
 # Verification report
 
+## Provider configuration follow-up — 2026-09-19
+
+The FCM adapter now exposes a fail-closed initialization result and the provider setup documentation explicitly covers OneSignal-only consumers.
+
+| Claim | Target/environment | Evidence level | Procedure | Result | Residual gate |
+| --- | --- | --- | --- | --- | --- |
+| Missing default Firebase app does not invoke the FCM initializer | JVM and iOS simulator arm64 | `Automated-tested` | `FcmInitializationTest` through `:push-fcm:jvmTest` and `:push-fcm:iosSimulatorArm64Test` | 3 new tests per target, 0 failures | Configured and unconfigured host-app runtime |
+| FCM binding still compiles after guarded creation | Android SDK 36 and iOS arm64 | `Compiled` | `:push-fcm:compileAndroidMain`, `:push-fcm:compileKotlinIosArm64` | Passed | Swift export consumption and physical-device flow |
+| OneSignal adapter remains independent from `push-fcm` | Gradle Android compile classpath | `Inspected` | `:push-onesignal:dependencies --configuration androidCompileClasspath` | Contains `OneSignal`, transitive `firebase-messaging`, and `push-core`; no `push-fcm` project dependency | Configured OneSignal host runtime |
+| OneSignal adapter still compiles/tests without Firebase app configuration files | JVM, Android SDK 36 and iOS arm64 | `Automated-tested`/`Compiled` | `:push-onesignal:jvmTest`, `:push-onesignal:compileAndroidMain`, `:push-onesignal:compileKotlinIosArm64` | Passed | Real provider registration/delivery/open |
+
+The OneSignal dependency graph containing Firebase Messaging on Android is expected: FCM is OneSignal's Google-device transport. It does not mean that a OneSignal-only consuming app must initialize Firebase's default app or package Firebase configuration files. The pinned OneSignal 5.9.8 source initializes a separate named Firebase app using its provider configuration.
+
+## CI/CD follow-up — 2026-09-19
+
+The workflow definitions and GitHub Packages Gradle repository are locally validated. The complete existing 271-task matrix remains the implementation baseline. Hosted CI run [35488718285](https://github.com/SOSMex/kmp-push-client/actions/runs/35488718285) then passed both jobs on the pull-request branch.
+
+| Claim | Evidence level | Procedure | Result | Residual gate |
+| --- | --- | --- | --- | --- |
+| Release version overrides the default Maven version | `Automated-tested` | `:push-core:properties -PreleaseVersion=1.2.3` | Reported `version: 1.2.3` | Verify generated POMs in hosted release run |
+| GitHub Packages tasks exist for all published modules | `Automated-inspected` | Gradle task discovery with repository credentials present | Four `publishAllPublicationsToGithubPackagesRepository` tasks discovered | No package upload attempted locally |
+| Pull-request CI | `Hosted-tested` | GitHub Actions run `35488718285` | JVM/Android passed in 2m09s; iOS tests, device compilation, complete Maven publications and artifact upload passed in 6m04s | Re-run required for future revisions |
+| Release-gated CD definition | `Source-reviewed` | `.github/workflows/publish-github-packages.yml` | Semantic tag, `main` ancestry, full matrix and scoped package publication defined | Requires an owner-published GitHub Release |
+
+The first hosted attempt failed before compilation because `android-actions/setup-android@v3` requested the removed SDK package `tools`. The workflow now validates the Android SDK 36 already present on the GitHub runner images; the succeeding run proves that path on both Ubuntu and Apple Silicon macOS.
+
 - Revision: `f237d38d5f4d240cf869f0a88d9e883c2ec92cdd` (implementation baseline; this report follows in a documentation commit)
 - Working tree at baseline: clean
 - Date: 2026-09-19, America/Mexico_City
@@ -26,7 +52,8 @@ Verify the local 0.1.0 vertical slice: provider-honest types, permission/enablem
 | Maven publication shape | Local test Maven repository | `Automated-tested` | Four `publishAllPublicationsToTestRepository` tasks | 20 target/root publications generated | Signing, Central metadata and owner-approved coordinates |
 | Maven consumer resolution | External JVM Gradle project | `Automated-tested` | `work/maven-consumer` with `--refresh-dependencies` | `maven_consumer=accepted` | Android/iOS external consumer projects remain desirable |
 | Real push registration/delivery/open | Physical Android + iPhone | No runtime evidence | Not available without provider projects, credentials and devices | Open | App/platform owners |
-| Public availability | Maven Central or other remote | No distribution evidence | No remote publication attempted | Open by explicit scope | Repository/release owner |
+| Remote source availability | Private GitHub repository | `Uploaded` | `SOSMex/kmp-push-client`, PR #1 | Source and PR uploaded; no package version published | Merge/release owner |
+| Public package availability | Maven Central or public registry | No distribution evidence | No public package publication attempted | Open by explicit scope | Repository/release owner |
 
 ## Commands and workflows
 
@@ -80,4 +107,4 @@ Result: `maven_consumer=accepted`.
 
 ## Narrowest truthful readiness statement
 
-The local 0.1.0 source is reviewable. Shared/provider rules are automated-tested on JVM and iOS simulator, Android native gateways and iOS bridges compile, Maven publications are generated locally, and an external JVM consumer resolves them. Real provider integration, physical-device delivery/open behavior, durable production ledger integration, remote publication and public release remain unproven.
+The 0.1.0 source is reviewable in private PR #1. Shared/provider rules are automated-tested on JVM and iOS simulator, Android native gateways and iOS bridges compile, Maven publications are generated locally and in green hosted CI, and an external JVM consumer resolves them. Real provider integration, physical-device delivery/open behavior, durable production ledger integration, package publication and public release remain separate gates.

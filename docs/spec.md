@@ -28,6 +28,8 @@ The client reports observations made by the app or provider SDK. It never descri
 10. Make unsupported operations explicit. No adapter may silently succeed.
 11. Redact destinations, external IDs, provider message IDs and payload values from default string representations and SDK diagnostic messages.
 12. Provide deterministic fakes for permission, destination, events, duplicates, unsupported capabilities, and identity changes.
+13. Fail closed when `push-fcm` is selected without a configured default Firebase app; configuration failures expose bounded reason enums and no configuration values.
+14. Keep provider configuration independent: a OneSignal-only host does not require `push-fcm`, a default Firebase app, `google-services.json`, or `GoogleService-Info.plist`.
 
 ## Acceptance scenarios
 
@@ -63,6 +65,14 @@ An unknown semantic payload version is rejected as `Incompatible`; it is never c
 
 When a durable ledger fails, the opened event returns `StorageFailure` and is not emitted; the SDK does not downgrade to process-only deduplication silently.
 
+### AC-06 Provider configuration independence
+
+Given the FCM Android adapter is selected and Firebase's default app is not configured, when the host creates the gateway, then creation returns `Unavailable(DEFAULT_FIREBASE_APP_NOT_CONFIGURED)` and does not call Firebase Messaging.
+
+Given the FCM iOS adapter is selected, when the host reports that `FirebaseApp.app()` is absent after configuration, then bridge creation returns `Unavailable(DEFAULT_FIREBASE_APP_NOT_CONFIGURED)`.
+
+Given only the OneSignal adapter is selected, then no default Firebase app or Firebase configuration file is required by the KMP adapter. Android delivery may still use FCM internally through OneSignal; iOS delivery uses APNs.
+
 ## Non-goals
 
 Sending/backend APIs, credentials, permission UI/Compose, local notifications, campaigns, analytics, topics, rich media/actions, in-app messages, scheduling, web/desktop runtime support, and two active providers in one build.
@@ -78,6 +88,7 @@ Sending/backend APIs, credentials, permission UI/Compose, local notifications, c
 
 - Payloads are untrusted hints, never authoritative application state.
 - The SDK performs no authorization and owns no credentials.
+- Firebase configuration files and OneSignal/APNs/FCM credentials remain owned by the consuming application or provider dashboard; they are never packaged in this repository.
 - Sensitive destination/identity/payload data is never included in `toString()` or SDK diagnostics.
 - Contract version 1 rejects unknown versions and malformed bounds.
 - Exactly-once means atomic handoff within the caller-supplied ledger scope; cross-install/provider delivery cannot be guaranteed.

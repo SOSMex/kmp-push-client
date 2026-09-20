@@ -29,6 +29,8 @@ Use four public libraries and one sample:
 
 The application selects a provider by depending on only one adapter. `ProviderKind`, destination subclasses and `CapabilityResult.Unsupported` preserve non-symmetry. A monotonically increasing identity generation fences stale callbacks. `OpenedEventHandoff` claims an event ID in an injected atomic ledger before publishing it.
 
+Provider configuration follows the same boundary. `push-fcm` validates that Firebase's default app is configured before exposing its binding. `push-onesignal` neither depends on `push-fcm` nor requires Firebase app configuration files: OneSignal owns its Android FCM transport bootstrap from provider-side configuration, while its iOS SDK uses APNs.
+
 ## Alternatives considered
 
 - Depend on KMPNotifier: rejected for 0.1.0 because it expands dependency/scope and reduces direct control over provider differences.
@@ -43,6 +45,7 @@ The application selects a provider by depending on only one adapter. `ProviderKi
 - Stale authenticated identity: generation fence clears destination and rejects old callbacks.
 - Sensitive logging: redacted model strings and diagnostics limited to enums/counts.
 - iOS runtime gap: compile bridges locally, but keep real-device APNs/FCM/OneSignal evidence open.
+- Missing host configuration: return a bounded unavailable reason before FCM use; never attach configuration values or credentials to the result.
 
 ## Verification
 
