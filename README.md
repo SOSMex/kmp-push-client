@@ -31,54 +31,16 @@ The library does not send notifications. It also does not provide notification U
 
 ## Architecture
 
-The app selects one provider module. Platform code performs the native bootstrap; provider clients then feed the same shared state and event engine.
+The app selects one provider module. That adapter connects the native SDK to the shared push contract.
 
 ```mermaid
 flowchart LR
-    subgraph Host["Consuming app"]
-        Android["Android host"]
-        iOS["iOS host"]
-        Permission["PermissionGateway"]
-        Ledger["AtomicEventLedger"]
-    end
-
-    subgraph FCM["push-fcm"]
-        FcmAndroid["FcmAndroidGateway"]
-        FcmIosApi["FcmIosHostApi"]
-        FcmIos["FcmIosGateway"]
-        FcmFactory["FcmClientFactory"]
-        FcmClient["FcmPushClient"]
-    end
-
-    subgraph OneSignal["push-onesignal"]
-        OneSignalAndroid["OneSignalAndroidGateway"]
-        OneSignalIos["iOS host gateway + callback bridge"]
-        OneSignalClient["OneSignalPushClient"]
-    end
-
-    subgraph Core["push-core"]
-        Engine["PushClientEngine"]
-        State["permission · enablement · destination"]
-        Events["foreground · opened"]
-    end
-
-    Android --> FcmAndroid --> FcmFactory
-    iOS --> FcmIosApi --> FcmIos --> FcmFactory
-    FcmFactory --> FcmClient --> Engine
-
-    Android --> OneSignalAndroid --> OneSignalClient
-    iOS --> OneSignalIos --> OneSignalClient
-    OneSignalClient --> Engine
-
-    Permission --> FcmFactory
-    Ledger --> FcmFactory
-    Permission --> OneSignalClient
-    Ledger --> OneSignalClient
-
-    Android -. "native callbacks" .-> FcmClient
-    iOS -. "native callbacks" .-> FcmClient
-    Engine --> State
-    Engine --> Events
+    Host["Android or iOS app"] --> Provider{"Choose one provider"}
+    Provider --> FCM["push-fcm"]
+    Provider --> OneSignal["push-onesignal"]
+    FCM --> Core["push-core"]
+    OneSignal --> Core
+    Core --> Output["Shared state and events"]
 ```
 
 ## Choose a provider
