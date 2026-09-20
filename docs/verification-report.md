@@ -15,14 +15,16 @@ The OneSignal dependency graph containing Firebase Messaging on Android is expec
 
 ## CI/CD follow-up — 2026-09-19
 
-The workflow definitions and GitHub Packages Gradle repository are locally validated. The complete existing 271-task matrix remains the implementation baseline; the hosted workflow run is a separate evidence gate.
+The workflow definitions and GitHub Packages Gradle repository are locally validated. The complete existing 271-task matrix remains the implementation baseline. Hosted CI run [35488718285](https://github.com/SOSMex/kmp-push-client/actions/runs/35488718285) then passed both jobs on the pull-request branch.
 
 | Claim | Evidence level | Procedure | Result | Residual gate |
 | --- | --- | --- | --- | --- |
 | Release version overrides the default Maven version | `Automated-tested` | `:push-core:properties -PreleaseVersion=1.2.3` | Reported `version: 1.2.3` | Verify generated POMs in hosted release run |
 | GitHub Packages tasks exist for all published modules | `Automated-inspected` | Gradle task discovery with repository credentials present | Four `publishAllPublicationsToGithubPackagesRepository` tasks discovered | No package upload attempted locally |
-| Pull-request CI definition | `Source-reviewed` | `.github/workflows/ci.yml` | Ubuntu JVM/Android and macOS iOS/publication jobs defined | GitHub-hosted run after push |
+| Pull-request CI | `Hosted-tested` | GitHub Actions run `35488718285` | JVM/Android passed in 2m09s; iOS tests, device compilation, complete Maven publications and artifact upload passed in 6m04s | Re-run required for future revisions |
 | Release-gated CD definition | `Source-reviewed` | `.github/workflows/publish-github-packages.yml` | Semantic tag, `main` ancestry, full matrix and scoped package publication defined | Requires an owner-published GitHub Release |
+
+The first hosted attempt failed before compilation because `android-actions/setup-android@v3` requested the removed SDK package `tools`. The workflow now validates the Android SDK 36 already present on the GitHub runner images; the succeeding run proves that path on both Ubuntu and Apple Silicon macOS.
 
 - Revision: `f237d38d5f4d240cf869f0a88d9e883c2ec92cdd` (implementation baseline; this report follows in a documentation commit)
 - Working tree at baseline: clean
@@ -105,4 +107,4 @@ Result: `maven_consumer=accepted`.
 
 ## Narrowest truthful readiness statement
 
-The 0.1.0 source is reviewable in private PR #1. Shared/provider rules are automated-tested on JVM and iOS simulator, Android native gateways and iOS bridges compile, Maven publications are generated locally, and an external JVM consumer resolves them. Hosted CI, real provider integration, physical-device delivery/open behavior, durable production ledger integration, package publication and public release remain separate gates.
+The 0.1.0 source is reviewable in private PR #1. Shared/provider rules are automated-tested on JVM and iOS simulator, Android native gateways and iOS bridges compile, Maven publications are generated locally and in green hosted CI, and an external JVM consumer resolves them. Real provider integration, physical-device delivery/open behavior, durable production ledger integration, package publication and public release remain separate gates.

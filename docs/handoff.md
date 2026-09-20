@@ -10,6 +10,6 @@ Validation: 12 JVM tests plus the same 12 Kotlin/Native simulator tests; Android
 
 Decisions: One provider per consumer build; provider-specific typed destinations; optional real OneSignal identity and explicit unsupported FCM identity; atomic caller-supplied ledger; monotonic identity generation; host-managed Apple SDK dependencies; no inferred provider/OS/open state.
 
-Residual risk: Hosted CI has not completed yet. There is no durable production ledger implementation, configured native host application, physical-device push flow, Android runtime observation or published package version. Maven Central signing/publication and public coordinates remain undecided. Dual-provider dependency exclusion is documented but not mechanically enforced.
+Residual risk: There is no durable production ledger implementation, configured native host application, physical-device push flow, Android runtime observation or published package version. Maven Central signing/publication and public coordinates remain undecided. Dual-provider dependency exclusion is documented but not mechanically enforced.
 
-Next action: Obtain green hosted CI on PR #1, complete architecture review of the public API, and decide durable ledger guidance and Apple dependency ownership. A package release still requires an owner-created semantic GitHub Release; physical Android/iPhone cold-start/open verification remains open.
+Next action: Complete architecture review of the public API and decide durable ledger guidance and Apple dependency ownership. A package release still requires an owner-created semantic GitHub Release; physical Android/iPhone cold-start/open verification remains open.
