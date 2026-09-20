@@ -31,4 +31,3 @@ fun main() = runBlocking {
             client.emitForeground(payload, generation = previousGeneration)::class.simpleName
     )
 }
-

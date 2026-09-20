@@ -16,4 +16,3 @@ application {
 kotlin {
     jvmToolchain(17)
 }
-

@@ -81,4 +81,3 @@ Result: `maven_consumer=accepted`.
 ## Narrowest truthful readiness statement
 
 The local 0.1.0 source is reviewable. Shared/provider rules are automated-tested on JVM and iOS simulator, Android native gateways and iOS bridges compile, Maven publications are generated locally, and an external JVM consumer resolves them. Real provider integration, physical-device delivery/open behavior, durable production ledger integration, remote publication and public release remain unproven.
-

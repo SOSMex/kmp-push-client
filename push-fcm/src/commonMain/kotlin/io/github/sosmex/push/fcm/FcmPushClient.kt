@@ -66,4 +66,3 @@ class FcmPushClient(
         coldStart: Boolean,
     ): EventOfferResult = engine.offerOpened(data, generation, coldStart)
 }
-

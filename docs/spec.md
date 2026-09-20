@@ -88,4 +88,3 @@ Sending/backend APIs, credentials, permission UI/Compose, local notifications, c
 - Android provider source: target compilation plus focused gateway tests where SDK APIs permit.
 - iOS bridge source: Kotlin/Native target compilation; real notification runtime remains a physical-device gate.
 - Maven consumption: publish to a temporary local repository and compile a consumer/sample.
-

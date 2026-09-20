@@ -25,4 +25,3 @@ class OneSignalIosCallbackBridge(private val client: OneSignalPushClient) {
         coldStart: Boolean,
     ): EventOfferResult = client.offerOpened(data, generation, coldStart)
 }
-

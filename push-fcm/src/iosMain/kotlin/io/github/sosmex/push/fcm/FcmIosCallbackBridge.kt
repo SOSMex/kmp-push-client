@@ -21,4 +21,3 @@ class FcmIosCallbackBridge(private val client: FcmPushClient) {
         coldStart: Boolean,
     ): EventOfferResult = client.offerOpened(data, generation, coldStart)
 }
-

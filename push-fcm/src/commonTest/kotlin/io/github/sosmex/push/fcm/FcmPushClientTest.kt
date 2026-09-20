@@ -42,4 +42,3 @@ private class Ledger : AtomicEventLedger {
     override suspend fun claim(scope: String, eventId: String) = LedgerClaim.Claimed
     override suspend fun clear(scope: String) = Unit
 }
-

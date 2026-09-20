@@ -26,4 +26,3 @@
 ## Invocation influence
 
 The design skill forced the project to create behavior and evidence artifacts before code and led to the explicit `Invoked` identity result instead of a misleading success/acceptance state. The parity skill prevented compilation and simulator tests from being described as physical push parity or release evidence.
-

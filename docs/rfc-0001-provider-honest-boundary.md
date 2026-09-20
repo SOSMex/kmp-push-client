@@ -51,4 +51,3 @@ Run common/JVM tests, Android compilation for both adapters, Kotlin/Native compi
 ## Decision
 
 The provider/target/scope constraints were supplied as decided input on 2026-09-19. This RFC records the local 0.1.0 proposal. It does not claim organizational approval or a published artifact.
-

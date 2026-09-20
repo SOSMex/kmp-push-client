@@ -13,4 +13,3 @@ Decisions: One provider per consumer build; provider-specific typed destinations
 Residual risk: No durable production ledger implementation, configured native host application, physical-device push flow, Android runtime observation, remote signing/publication or owner-approved coordinates. Dual-provider dependency exclusion is documented but not mechanically enforced.
 
 Next action: Architecture review of the public API and owner decision on durable ledger guidance and Apple dependency ownership, followed by two configured sample apps and physical Android/iPhone cold-start/open verification.
-
