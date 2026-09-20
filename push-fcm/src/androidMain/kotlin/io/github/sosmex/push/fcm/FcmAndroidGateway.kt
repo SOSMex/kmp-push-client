@@ -3,8 +3,8 @@ package io.github.sosmex.push.fcm
 import com.google.firebase.FirebaseApp
 import com.google.firebase.messaging.FirebaseMessaging
 
-/** Thin Firebase binding. Permission requests stay in the host Activity/UI boundary. */
-class FirebaseMessagingAndroidGateway private constructor(
+/** Android FCM binding. Permission requests stay in the host Activity/UI boundary. */
+class FcmAndroidGateway private constructor(
     private val messaging: FirebaseMessaging = FirebaseMessaging.getInstance(),
 ) : FcmGateway {
     override suspend fun setEnabled(enabled: Boolean) {
@@ -13,10 +13,10 @@ class FirebaseMessagingAndroidGateway private constructor(
 
     companion object {
         /**
-         * Creates the FCM binding only when the host has configured Firebase's default app.
-         * This check intentionally lives in push-fcm and is never evaluated by push-onesignal.
+         * Creates the gateway only when the host has configured Firebase's default app.
+         * This check is never evaluated by the OneSignal adapter.
          */
-        fun create(): FcmInitializationResult<FirebaseMessagingAndroidGateway> =
+        fun create(): FcmInitializationResult<FcmAndroidGateway> =
             initializeFcm(
                 isDefaultFirebaseAppConfigured = {
                     try {
@@ -26,7 +26,7 @@ class FirebaseMessagingAndroidGateway private constructor(
                         false
                     }
                 },
-                initializer = { FirebaseMessagingAndroidGateway() },
+                initializer = { FcmAndroidGateway() },
             )
     }
 }

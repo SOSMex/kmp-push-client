@@ -4,7 +4,7 @@
 
 Use Firebase Cloud Messaging or OneSignal from shared Kotlin Multiplatform code without hiding the differences between them.
 
-The library gives Android and iOS apps one small API for permission state, push enablement, registration, foreground notifications and notification opens. Native SDK setup stays in the app, where it belongs.
+The shared API covers permission state, push enablement, registration, foreground notifications and notification opens. FCM uses the same client factory and callback API on Android and iOS; each app still owns its native Firebase setup.
 
 > The source is at `0.1.0`. Packages have not been released to GitHub Packages or Maven Central yet.
 
@@ -16,7 +16,9 @@ This project keeps that plumbing in one place while staying clear about what eac
 
 ## What you get
 
-- Android and iOS targets.
+- Shared Android and iOS targets.
+- `FcmAndroidGateway` and `FcmIosGateway` behind one `FcmClientFactory`.
+- An Android OneSignal gateway and an iOS callback bridge.
 - Separate adapters for FCM and OneSignal.
 - Typed FCM tokens and OneSignal subscription IDs.
 - Permission and enable/disable state.
@@ -61,19 +63,17 @@ Those coordinates become usable after the first package release. Until then, use
 The app provides permission handling and durable storage for opened-event IDs. The SDK handles the shared state and event stream.
 
 ```kotlin
-val gateway = when (val result = FirebaseMessagingAndroidGateway.create()) {
+val pushClient = when (val result = FcmClientFactory.create(
+    permissionGateway = appPermissionGateway,
+    gateway = FcmAndroidGateway.create(),
+    ledger = appEventLedger,
+)) {
     is FcmInitializationResult.Ready -> result.value
     is FcmInitializationResult.Unavailable -> {
         showPushUnavailable(result.reason)
         return
     }
 }
-
-val pushClient = FcmPushClient(
-    permissionGateway = appPermissionGateway,
-    gateway = gateway,
-    ledger = appEventLedger,
-)
 
 applicationScope.launch {
     if (pushClient.requestPermission() == PermissionState.Granted) {
@@ -100,7 +100,9 @@ applicationScope.launch {
 
 Forward notification opens with `offerOpened(...)` and foreground data messages with `offerForeground(...)`. Use the current generation for every native callback so callbacks from an old login or provider session can be ignored.
 
-On iOS, configure Firebase in Swift first and create the bridge only after `FirebaseApp.app()` is available. `FcmIosCallbackBridge.create(...)` returns an unavailable result when the app has not been configured.
+On iOS, configure Firebase in Swift and implement `FcmIosHostApi` with `Messaging.messaging().isAutoInitEnabled`. Pass that host API and the result of `FirebaseApp.app() != nil` to `FcmIosGateway.create(...)`, then give its result to the same `FcmClientFactory.create(...)` call shown above.
+
+Both platforms forward token, foreground and open callbacks directly to the resulting `FcmPushClient`. The platform bootstrap differs; the client contract does not.
 
 ## OneSignal example
 
@@ -121,7 +123,7 @@ applicationScope.launch {
 }
 ```
 
-The host app still registers OneSignal subscription, foreground and click observers and forwards those callbacks to the client. On iOS, use `OneSignalIosCallbackBridge`; Firebase setup is not involved.
+The host app still registers OneSignal subscription, foreground and click observers and forwards those callbacks to the client. On iOS, `OneSignalIosCallbackBridge` forwards those callbacks, but the app must supply its own `OneSignalGateway`; Firebase setup is not involved.
 
 ## Payloads
 
@@ -143,8 +145,8 @@ val payload = mapOf(
 | Module | What it contains |
 | --- | --- |
 | `push-core` | Shared models, state, events and deduplication contracts |
-| `push-fcm` | FCM client, Android gateway and iOS bridge |
-| `push-onesignal` | OneSignal client, identity support, Android gateway and iOS bridge |
+| `push-fcm` | FCM client factory and Android/iOS gateways |
+| `push-onesignal` | OneSignal client, identity support, Android native gateway and iOS callback bridge |
 | `push-test` | Fakes and an in-memory ledger for tests |
 | `sample` | Small JVM example with no provider credentials |
 

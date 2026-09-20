@@ -10,7 +10,7 @@ The delivery directory started empty. The reference product is not modified. A n
 
 ## Vertical slice
 
-A fake/native gateway emits permission, enablement, typed destination, foreground and open observations into shared provider clients. Shared handoff atomically deduplicates opens and rejects stale generations. Android gateways bind current vendor SDKs; iOS bridges are host-called entry points.
+A fake/native gateway emits permission, enablement, typed destination, foreground and open observations into shared provider clients. Shared handoff atomically deduplicates opens and rejects stale generations. Android gateways bind current vendor SDKs. FCM on iOS uses a named gateway over a narrow Swift host API; OneSignal retains its host-called callback bridge.
 
 ## Ownership matrix
 
@@ -20,8 +20,9 @@ A fake/native gateway emits permission, enablement, typed destination, foregroun
 | Generation fence and open handoff | `push-core/commonMain` | Same semantics on every target |
 | FCM orchestration | `push-fcm/commonMain` | Provider-specific, platform-neutral |
 | FCM configuration result | `push-fcm/commonMain` | Shared fail-closed outcome and redacted reason codes |
-| Firebase SDK calls | `push-fcm/androidMain` | Android vendor API |
-| FCM callback forwarding/configuration assertion | `push-fcm/iosMain` | iOS host/native boundary; host owns Firebase runtime inspection |
+| Android Firebase SDK calls | `push-fcm/androidMain` | Android vendor API hidden behind `FcmAndroidGateway` |
+| iOS Firebase SDK control/configuration assertion | `push-fcm/iosMain` | `FcmIosGateway` delegates to host-owned Firebase through `FcmIosHostApi` |
+| FCM client construction | `push-fcm/commonMain` | One `FcmClientFactory` maps either gateway result to the same client contract |
 | OneSignal orchestration and identity | `push-onesignal/commonMain` | Provider-specific capability |
 | OneSignal SDK calls | `push-onesignal/androidMain` | Android vendor API |
 | OneSignal callback forwarding | `push-onesignal/iosMain` | iOS host/native boundary |
@@ -43,7 +44,7 @@ A fake/native gateway emits permission, enablement, typed destination, foregroun
 1. Create Gradle build, license and publication conventions.
 2. Implement/test core models, validation, redaction, fence and handoff.
 3. Implement provider clients and explicit capability differences.
-4. Add Android native gateways and iOS callback bridges.
+4. Add Android native gateways and iOS host boundaries.
 5. Add fakes and sample.
 6. Run discovered build/test/publication checks and write verification report.
 7. Document provider-specific configuration and verify fail-closed FCM initialization without regressing OneSignal-only builds.
@@ -57,7 +58,7 @@ A fake/native gateway emits permission, enablement, typed destination, foregroun
 | Android Firebase/OneSignal bindings | Android compile | Compiled |
 | Missing/default Firebase configuration outcome | JVM/common tests plus Android compile | Automated-tested/compiled |
 | OneSignal-only dependency path | Gradle dependency inspection plus Android/iOS compile | No direct `push-fcm` dependency or Firebase app configuration prerequisite |
-| iOS callback bridges | iOS arm64 and simulator compile | Compiled |
+| iOS FCM gateway and OneSignal callback bridge | iOS simulator tests plus arm64 compilation | Automated-tested/compiled |
 | Maven consumability | Temporary Maven repository + sample | Automated-tested |
 | Real permission/delivery/open | Physical Android and iPhone | Physically-tested, remains open locally |
 | CI workflow | GitHub-hosted Ubuntu and macOS runners | Required pull-request checks after workflow publication |

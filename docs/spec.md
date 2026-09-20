@@ -30,6 +30,7 @@ The client reports observations made by the app or provider SDK. It never descri
 12. Provide deterministic fakes for permission, destination, events, duplicates, unsupported capabilities, and identity changes.
 13. Fail closed when `push-fcm` is selected without a configured default Firebase app; configuration failures expose bounded reason enums and no configuration values.
 14. Keep provider configuration independent: a OneSignal-only host does not require `push-fcm`, a default Firebase app, `google-services.json`, or `GoogleService-Info.plist`.
+15. Expose FCM consistently as `FcmClientFactory`, `FcmAndroidGateway` and `FcmIosGateway`; vendor SDK class names remain implementation details.
 
 ## Acceptance scenarios
 
@@ -69,7 +70,9 @@ When a durable ledger fails, the opened event returns `StorageFailure` and is no
 
 Given the FCM Android adapter is selected and Firebase's default app is not configured, when the host creates the gateway, then creation returns `Unavailable(DEFAULT_FIREBASE_APP_NOT_CONFIGURED)` and does not call Firebase Messaging.
 
-Given the FCM iOS adapter is selected, when the host reports that `FirebaseApp.app()` is absent after configuration, then bridge creation returns `Unavailable(DEFAULT_FIREBASE_APP_NOT_CONFIGURED)`.
+Given the FCM iOS adapter is selected, when the host reports that `FirebaseApp.app()` is absent after configuration, then `FcmIosGateway.create` returns `Unavailable(DEFAULT_FIREBASE_APP_NOT_CONFIGURED)`.
+
+Given either Android or iOS produces a ready FCM gateway, when it is passed to `FcmClientFactory.create`, then the result exposes the same `FcmPushClient` contract and callback methods.
 
 Given only the OneSignal adapter is selected, then no default Firebase app or Firebase configuration file is required by the KMP adapter. Android delivery may still use FCM internally through OneSignal; iOS delivery uses APNs.
 
@@ -81,7 +84,8 @@ Sending/backend APIs, credentials, permission UI/Compose, local notifications, c
 
 - Kotlin common code: Android, iOS arm64, iOS simulator arm64, plus JVM for fast tests/sample.
 - Android provider bindings: Firebase Messaging and OneSignal native SDKs.
-- iOS provider bridges: Swift host integrates the native SDK and forwards typed callbacks; the Maven library has no CocoaPods/SPM ownership.
+- iOS FCM gateway: Swift owns Firebase through SPM/CocoaPods, implements the narrow `FcmIosHostApi` control, and forwards callbacks to the shared client.
+- iOS OneSignal bridge: Swift host integrates the native SDK and forwards typed callbacks; the Maven library has no CocoaPods/SPM ownership.
 - Physical push delivery requires configured apps, APNs/FCM credentials and real devices and is outside local automated evidence.
 
 ## Safety, privacy, authorization and compatibility
@@ -97,5 +101,5 @@ Sending/backend APIs, credentials, permission UI/Compose, local notifications, c
 
 - Common contracts, duplicates, cold start, stale generation and redaction: automated tests.
 - Android provider source: target compilation plus focused gateway tests where SDK APIs permit.
-- iOS bridge source: Kotlin/Native target compilation; real notification runtime remains a physical-device gate.
+- iOS gateway/bridge source: Kotlin/Native tests and target compilation; real notification runtime remains a physical-device gate.
 - Maven consumption: publish to a temporary local repository and compile a consumer/sample.

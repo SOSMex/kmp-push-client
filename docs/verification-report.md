@@ -1,5 +1,20 @@
 # Verification report
 
+## Symmetric FCM API refactor — 2026-09-19
+
+The FCM public surface now uses one provider vocabulary and one client-construction path. `FirebaseMessagingAndroidGateway` and `FcmIosCallbackBridge` were replaced by `FcmAndroidGateway`, `FcmIosGateway`, `FcmIosHostApi` and `FcmClientFactory`.
+
+| Claim | Target/environment | Evidence level | Procedure | Result | Residual gate |
+| --- | --- | --- | --- | --- | --- |
+| Either initialized platform gateway creates the same FCM client contract | JVM and iOS simulator arm64 | `Automated-tested` | `FcmInitializationTest` through `:push-fcm:jvmTest` and `:push-fcm:iosSimulatorArm64Test` | Factory success and unavailable propagation passed | Configured host runtime |
+| Missing Firebase configuration fails closed on iOS | iOS simulator arm64 | `Automated-tested` | `FcmIosGatewayTest.missingFirebaseAppReturnsUnavailable` | Passed | Configured and unconfigured Swift host application |
+| iOS enablement reaches the host-owned Firebase control | iOS simulator arm64 | `Automated-tested` | `FcmIosGatewayTest.configuredGatewayControlsNativeAutoInit` | `true` and `false` calls observed in order | Real Firebase Messaging SDK and physical iPhone |
+| New Android FCM gateway compiles against Firebase Messaging | Android SDK 36 | `Compiled` | `:push-fcm:compileAndroidMain` | Passed | Configured Android runtime |
+| New iOS FCM gateway compiles for a device target | iOS arm64 | `Compiled` | `:push-fcm:compileKotlinIosArm64` | Passed | Swift export consumption and physical-device flow |
+| Updated `push-fcm` publication is consumable | Local Maven repository and external JVM Gradle project | `Automated-tested` | Four local publication tasks, then `work/maven-consumer` with `--refresh-dependencies` | `FcmClientFactory` resolved and `maven_consumer=accepted` | Android/iOS external host projects |
+
+The same full 271-task matrix used by CI passed locally, including all JVM tests, all iOS simulator tests, Android bindings, iOS arm64 compilation, the sample and all local Maven publications. This proves shared behavior, the iOS host seam, compilation and publication shape. It does not prove Firebase registration, delivery, foreground receipt or notification opens on a configured physical Android device or iPhone.
+
 ## Provider configuration follow-up — 2026-09-19
 
 The FCM adapter now exposes a fail-closed initialization result and the provider setup documentation explicitly covers OneSignal-only consumers.
