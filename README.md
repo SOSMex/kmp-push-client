@@ -4,7 +4,7 @@
 
 Use Firebase Cloud Messaging or OneSignal from shared Kotlin Multiplatform code without hiding the differences between them.
 
-The library gives Android and iOS apps one small API for permission state, push enablement, registration, foreground notifications and notification opens. Native SDK setup stays in the app, where it belongs.
+The shared API covers permission state, push enablement, registration, foreground notifications and notification opens. Android includes native provider gateways. The current iOS target includes callback bridges, but the consuming app must still supply the provider gateway and native SDK integration.
 
 > The source is at `0.1.0`. Packages have not been released to GitHub Packages or Maven Central yet.
 
@@ -16,7 +16,9 @@ This project keeps that plumbing in one place while staying clear about what eac
 
 ## What you get
 
-- Android and iOS targets.
+- Shared Android and iOS targets.
+- Native Firebase and OneSignal gateways on Android.
+- Callback bridges on iOS.
 - Separate adapters for FCM and OneSignal.
 - Typed FCM tokens and OneSignal subscription IDs.
 - Permission and enable/disable state.
@@ -100,7 +102,9 @@ applicationScope.launch {
 
 Forward notification opens with `offerOpened(...)` and foreground data messages with `offerForeground(...)`. Use the current generation for every native callback so callbacks from an old login or provider session can be ignored.
 
-On iOS, configure Firebase in Swift first and create the bridge only after `FirebaseApp.app()` is available. `FcmIosCallbackBridge.create(...)` returns an unavailable result when the app has not been configured.
+This example is Android-specific because `FirebaseMessagingAndroidGateway.create()` lives in `androidMain`.
+
+On iOS, the app configures Firebase in Swift and supplies an implementation of `FcmGateway` when constructing `FcmPushClient`. After `FirebaseApp.app()` is available, `FcmIosCallbackBridge.create(...)` connects Firebase and notification-center callbacks to that client. There is no packaged `FirebaseMessagingIosGateway` in `0.1.0`, so iOS provider integration is not turnkey yet.
 
 ## OneSignal example
 
@@ -121,7 +125,7 @@ applicationScope.launch {
 }
 ```
 
-The host app still registers OneSignal subscription, foreground and click observers and forwards those callbacks to the client. On iOS, use `OneSignalIosCallbackBridge`; Firebase setup is not involved.
+The host app still registers OneSignal subscription, foreground and click observers and forwards those callbacks to the client. On iOS, `OneSignalIosCallbackBridge` forwards those callbacks, but the app must supply its own `OneSignalGateway`; Firebase setup is not involved.
 
 ## Payloads
 
@@ -143,8 +147,8 @@ val payload = mapOf(
 | Module | What it contains |
 | --- | --- |
 | `push-core` | Shared models, state, events and deduplication contracts |
-| `push-fcm` | FCM client, Android gateway and iOS bridge |
-| `push-onesignal` | OneSignal client, identity support, Android gateway and iOS bridge |
+| `push-fcm` | FCM client, Android native gateway and iOS callback bridge |
+| `push-onesignal` | OneSignal client, identity support, Android native gateway and iOS callback bridge |
 | `push-test` | Fakes and an in-memory ledger for tests |
 | `sample` | Small JVM example with no provider credentials |
 
