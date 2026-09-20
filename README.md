@@ -1,8 +1,10 @@
 # KMP Push Client 0.1.0
 
+[![CI](https://github.com/SOSMex/kmp-push-client/actions/workflows/ci.yml/badge.svg)](https://github.com/SOSMex/kmp-push-client/actions/workflows/ci.yml)
+
 A small Kotlin Multiplatform push client contract for Android and iOS. It supports one provider per build and preserves the real differences between Firebase Cloud Messaging and OneSignal.
 
-This is an independent repository and local 0.1.0 evaluation build. It has not been published to Maven Central or any remote repository.
+This is an independent repository and 0.1.0 evaluation build hosted privately on GitHub. No package version has been published to GitHub Packages or Maven Central yet.
 
 ## Motivation
 
@@ -82,7 +84,7 @@ The project can be published into its local test Maven repository:
 
 Set `ANDROID_HOME` or an ignored `local.properties` with `sdk.dir=...` before Android tasks.
 
-For local composite development, depend directly on the modules. Proposed coordinates for a future public publication are:
+For local composite development, depend directly on the modules. GitHub Packages publications use these coordinates:
 
 ```kotlin
 commonMain.dependencies {
@@ -92,7 +94,18 @@ commonMain.dependencies {
 }
 ```
 
-The final public group ID and repository are owner decisions and have not been reserved.
+The repository and its GitHub Packages registry are currently private. Public Maven Central coordinates, signing and availability remain separate owner decisions.
+
+## CI/CD
+
+The repository includes two GitHub Actions workflows:
+
+- `CI` runs for pull requests targeting `main`, pushes to `main`, and manual dispatches. Ubuntu validates JVM behavior, Android bindings and the credential-free sample. A fixed Apple Silicon `macos-15` runner validates iOS simulator behavior, device-target compilation and the complete local Maven publication shape.
+- `Publish GitHub Packages` runs only when a GitHub Release is published. It requires a semantic tag such as `v0.1.0`, verifies that the released commit belongs to `main`, reruns the cross-platform release matrix and publishes all four library modules to the repository's GitHub Packages Maven registry.
+
+The publication workflow uses the scoped GitHub Actions token; no provider credentials, Firebase files or custom publishing secrets are required. It does not publish to Maven Central and it does not create a public release automatically.
+
+Authenticated consumers can add the private registry and use the coordinates above. See [`docs/ci-cd.md`](docs/ci-cd.md) for the release gate and Gradle repository example.
 
 ## Usage example
 

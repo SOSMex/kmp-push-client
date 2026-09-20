@@ -47,6 +47,7 @@ A fake/native gateway emits permission, enablement, typed destination, foregroun
 5. Add fakes and sample.
 6. Run discovered build/test/publication checks and write verification report.
 7. Document provider-specific configuration and verify fail-closed FCM initialization without regressing OneSignal-only builds.
+8. Add cross-platform pull-request CI and release-gated GitHub Packages delivery without granting provider or Maven Central credentials.
 
 ## Verification matrix
 
@@ -59,6 +60,8 @@ A fake/native gateway emits permission, enablement, typed destination, foregroun
 | iOS callback bridges | iOS arm64 and simulator compile | Compiled |
 | Maven consumability | Temporary Maven repository + sample | Automated-tested |
 | Real permission/delivery/open | Physical Android and iPhone | Physically-tested, remains open locally |
+| CI workflow | GitHub-hosted Ubuntu and macOS runners | Required pull-request checks after workflow publication |
+| GitHub Packages delivery | Published semantic GitHub Release on a `main` commit | Registry publication; no Maven Central/public-release claim |
 
 ## Open decisions
 

@@ -1,0 +1,137 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  jvm-android:
+    name: JVM and Android
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK 36
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Test JVM behavior and compile Android bindings
+        run: >-
+          ./gradlew
+          :push-core:jvmTest
+          :push-fcm:jvmTest
+          :push-onesignal:jvmTest
+          :push-test:jvmTest
+          :push-fcm:compileAndroidMain
+          :push-onesignal:compileAndroidMain
+          :sample:run
+          --stacktrace
+
+      - name: Upload JVM test reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: jvm-test-reports-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            **/build/reports/tests/**
+            **/build/test-results/**
+          if-no-files-found: warn
+          retention-days: 7
+
+  ios:
+    name: iOS
+    runs-on: macos-15
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Verify Apple Silicon runner
+        run: test "$(uname -m)" = arm64
+
+      - name: Set up Android SDK for publication metadata
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK 36
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Test simulator behavior and compile device libraries
+        run: >-
+          ./gradlew
+          :push-core:iosSimulatorArm64Test
+          :push-fcm:iosSimulatorArm64Test
+          :push-onesignal:iosSimulatorArm64Test
+          :push-test:iosSimulatorArm64Test
+          :push-core:compileKotlinIosArm64
+          :push-fcm:compileKotlinIosArm64
+          :push-onesignal:compileKotlinIosArm64
+          :push-test:compileKotlinIosArm64
+          --stacktrace
+
+      - name: Build complete local Maven publications
+        run: >-
+          ./gradlew
+          :push-core:publishAllPublicationsToTestRepository
+          :push-fcm:publishAllPublicationsToTestRepository
+          :push-onesignal:publishAllPublicationsToTestRepository
+          :push-test:publishAllPublicationsToTestRepository
+          --stacktrace
+
+      - name: Upload Maven publications
+        uses: actions/upload-artifact@v7
+        with:
+          name: local-maven-${{ github.sha }}
+          path: build/test-maven
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload iOS test reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ios-test-reports-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            **/build/reports/tests/**
+            **/build/test-results/**
+          if-no-files-found: warn
+          retention-days: 7
