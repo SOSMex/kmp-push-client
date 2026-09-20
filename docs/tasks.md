@@ -23,3 +23,10 @@
 - [x] Compile Android and iOS targets.
 - [x] Publish to a temporary Maven repository and compile/run the sample.
 - [x] Record physical-device and distribution evidence as unavailable, not inferred.
+
+## Provider configuration follow-up
+
+- [x] Document FCM versus OneSignal configuration ownership on Android and iOS.
+- [x] Return an explicit unavailable result when FCM's default Firebase app is absent.
+- [x] Keep the OneSignal-only adapter independent from `push-fcm` and Firebase app configuration files.
+- [ ] Verify both adapters in configured physical-device host applications.

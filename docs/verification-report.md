@@ -1,5 +1,18 @@
 # Verification report
 
+## Provider configuration follow-up — 2026-09-19
+
+The FCM adapter now exposes a fail-closed initialization result and the provider setup documentation explicitly covers OneSignal-only consumers.
+
+| Claim | Target/environment | Evidence level | Procedure | Result | Residual gate |
+| --- | --- | --- | --- | --- | --- |
+| Missing default Firebase app does not invoke the FCM initializer | JVM and iOS simulator arm64 | `Automated-tested` | `FcmInitializationTest` through `:push-fcm:jvmTest` and `:push-fcm:iosSimulatorArm64Test` | 3 new tests per target, 0 failures | Configured and unconfigured host-app runtime |
+| FCM binding still compiles after guarded creation | Android SDK 36 and iOS arm64 | `Compiled` | `:push-fcm:compileAndroidMain`, `:push-fcm:compileKotlinIosArm64` | Passed | Swift export consumption and physical-device flow |
+| OneSignal adapter remains independent from `push-fcm` | Gradle Android compile classpath | `Inspected` | `:push-onesignal:dependencies --configuration androidCompileClasspath` | Contains `OneSignal`, transitive `firebase-messaging`, and `push-core`; no `push-fcm` project dependency | Configured OneSignal host runtime |
+| OneSignal adapter still compiles/tests without Firebase app configuration files | JVM, Android SDK 36 and iOS arm64 | `Automated-tested`/`Compiled` | `:push-onesignal:jvmTest`, `:push-onesignal:compileAndroidMain`, `:push-onesignal:compileKotlinIosArm64` | Passed | Real provider registration/delivery/open |
+
+The OneSignal dependency graph containing Firebase Messaging on Android is expected: FCM is OneSignal's Google-device transport. It does not mean that a OneSignal-only consuming app must initialize Firebase's default app or package Firebase configuration files. The pinned OneSignal 5.9.8 source initializes a separate named Firebase app using its provider configuration.
+
 - Revision: `f237d38d5f4d240cf869f0a88d9e883c2ec92cdd` (implementation baseline; this report follows in a documentation commit)
 - Working tree at baseline: clean
 - Date: 2026-09-19, America/Mexico_City
