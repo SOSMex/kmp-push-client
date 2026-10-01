@@ -15,6 +15,7 @@ The Apple Silicon `macos-15` job verifies:
 - all iOS simulator tests;
 - all iOS arm64 device-target compilations;
 - the complete local Maven publication shape for `push-core`, `push-fcm`, `push-onesignal`, and `push-test`.
+- an independent JVM consumer resolving those artifacts from `build/test-maven`, without project dependencies or composite substitution.
 
 Failed jobs retain test reports for seven days. Successful CI retains the generated local Maven repository for seven days as a review artifact. These artifacts are CI evidence, not a supported package registry or public release.
 
