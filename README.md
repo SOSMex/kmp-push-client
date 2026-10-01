@@ -8,6 +8,9 @@ The shared API covers permission state, push enablement, registration, foregroun
 
 > The source is at `0.1.0`. Packages have not been released to GitHub Packages or Maven Central yet.
 
+Start with the [credential-free sample](#try-the-sample), then follow the
+[installation guide](docs/getting-started.md) to consume the source or local Maven artifacts.
+
 ## Why
 
 Push code tends to spread quickly: a token callback in Android, another delegate in iOS, provider state in shared code and slightly different open handling on every screen.
@@ -62,15 +65,10 @@ commonMain.dependencies {
 }
 ```
 
-Those coordinates become usable after the first package release. Until then, use the repository as a composite build or publish it locally:
-
-```bash
-./gradlew \
-  :push-core:publishAllPublicationsToTestRepository \
-  :push-fcm:publishAllPublicationsToTestRepository \
-  :push-onesignal:publishAllPublicationsToTestRepository \
-  :push-test:publishAllPublicationsToTestRepository
-```
+These are the module coordinates, not currently downloadable releases. Use the
+[composite-build setup](docs/getting-started.md#use-the-source-in-your-app) to resolve them
+from a checkout today. The same guide includes local Maven publication, consumer repository
+configuration, and an independent consumer check.
 
 ## FCM setup
 
@@ -124,10 +122,13 @@ applicationScope.launch {
     }
 }
 
+// Capture once when installing this native callback session.
+val callbackGeneration = pushClient.currentGeneration()
+
 suspend fun onNewFcmToken(token: String) {
     pushClient.observeToken(
         token = token,
-        generation = pushClient.currentGeneration(),
+        generation = callbackGeneration,
     )
 }
 
@@ -141,7 +142,9 @@ applicationScope.launch {
 }
 ```
 
-Forward notification opens with `offerOpened(...)` and foreground data messages with `offerForeground(...)`. Use the current generation for every native callback so callbacks from an old login or provider session can be ignored.
+Forward notification opens with `offerOpened(...)` and foreground data messages with `offerForeground(...)`, using the same captured generation. Do not read `currentGeneration()` when a callback arrives: that would relabel an old callback as belonging to the new session. On a session change, advance the generation, replace the native callback bindings, and let already queued work retain its original generation. See [callback ownership](docs/getting-started.md#connect-native-callbacks).
+
+`observeToken(...)` forwards a token received from the native SDK; it does not register a listener. The observable stream is `client.events`.
 
 Both platforms forward token, foreground and open callbacks directly to `FcmPushClient`. Only the native bootstrap differs.
 
@@ -224,7 +227,7 @@ Set `ANDROID_HOME` or add an ignored `local.properties` with `sdk.dir=...`, then
   :sample:run
 ```
 
-The project currently uses Kotlin 2.4.10, Android API 36, Firebase BoM 34.18.0 and OneSignal Android 5.9.8.
+Use JDK 17 and Android SDK 36; complete Apple-target builds also require macOS and Xcode. The project currently uses Kotlin 2.4.10, Android API 36, Firebase BoM 34.18.0 and OneSignal Android 5.9.8.
 
 ## Releases
 
@@ -235,6 +238,7 @@ See [CI/CD](docs/ci-cd.md) for the release flow and private registry setup.
 ## More detail
 
 - [Behavioral specification](docs/spec.md)
+- [Installation and native callback checklist](docs/getting-started.md)
 - [Architecture decision](docs/rfc-0001-provider-honest-boundary.md)
 - [Verification report](docs/verification-report.md)
 

@@ -120,6 +120,9 @@ jobs:
           :push-test:publishAllPublicationsToTestRepository
           --stacktrace
 
+      - name: Verify independent Maven consumer
+        run: ./gradlew -p integration-tests/maven-consumer run --stacktrace
+
       - name: Upload Maven publications
         uses: actions/upload-artifact@v7
         with:
