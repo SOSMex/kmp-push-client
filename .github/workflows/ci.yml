@@ -71,7 +71,7 @@ jobs:
   ios:
     name: iOS
     runs-on: macos-15
-    timeout-minutes: 30
+    timeout-minutes: 45
 
     steps:
       - name: Check out repository
@@ -120,8 +120,33 @@ jobs:
           :push-test:publishAllPublicationsToTestRepository
           --stacktrace
 
-      - name: Verify independent Maven consumer
+      - name: Verify Maven publication structure and metadata
+        run: scripts/verify-maven-publications.sh build/test-maven 0.1.0
+
+      - name: Verify independent JVM Maven consumer
         run: ./gradlew -p integration-tests/maven-consumer run --stacktrace
+
+      - name: Verify independent FCM Android and Apple Maven consumer
+        run: >-
+          ./gradlew
+          -p integration-tests/kmp-maven-consumer
+          clean
+          compileAndroidMain
+          linkDebugFrameworkIosSimulatorArm64
+          linkDebugFrameworkIosArm64
+          -PpushProvider=fcm
+          --stacktrace
+
+      - name: Verify independent OneSignal Android and Apple Maven consumer
+        run: >-
+          ./gradlew
+          -p integration-tests/kmp-maven-consumer
+          clean
+          compileAndroidMain
+          linkDebugFrameworkIosSimulatorArm64
+          linkDebugFrameworkIosArm64
+          -PpushProvider=onesignal
+          --stacktrace
 
       - name: Upload Maven publications
         uses: actions/upload-artifact@v7

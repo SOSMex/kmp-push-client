@@ -65,10 +65,10 @@ commonMain.dependencies {
 }
 ```
 
-These are the module coordinates, not currently downloadable releases. Use the
+These are the planned public module coordinates, not currently downloadable releases. Use the
 [composite-build setup](docs/getting-started.md#use-the-source-in-your-app) to resolve them
 from a checkout today. The same guide includes local Maven publication, consumer repository
-configuration, and an independent consumer check.
+configuration, and independent JVM/Android/iOS consumer checks.
 
 ## FCM setup
 
@@ -231,9 +231,9 @@ Use JDK 17 and Android SDK 36; complete Apple-target builds also require macOS a
 
 ## Releases
 
-CI runs the JVM, Android and iOS checks on every pull request. Publishing a semantic GitHub Release such as `v0.1.0` triggers publication to the repository's private GitHub Packages registry. Maven Central publication is not configured.
+CI runs the JVM, Android and iOS checks on every pull request. Publishing a semantic GitHub Release such as `v0.1.0` triggers publication to the repository's private GitHub Packages registry.
 
-See [CI/CD](docs/ci-cd.md) for the release flow and private registry setup.
+Maven Central distribution is configured but has not been run. It remains blocked on successful namespace, token and signing-key onboarding plus an owner-dispatched release workflow. The workflow stages a deployment for manual Portal review by default; requesting public release requires an explicit input. See the [Central release runbook](docs/central-release.md) and [CI/CD contract](docs/ci-cd.md).
 
 ## More detail
 

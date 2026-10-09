@@ -1,7 +1,8 @@
 pluginManagement {
     repositories {
-        gradlePluginPortal()
+        google()
         mavenCentral()
+        gradlePluginPortal()
     }
 }
 
@@ -23,6 +24,9 @@ dependencyResolutionManagement {
                 filter { includeGroup("io.github.sosmex.push") }
             }
         } else {
+            // A dedicated Central repository is the only allowed source for SDK coordinates.
+            // The general Central declaration below excludes them, so this mode cannot fall
+            // back to a stale local repository or another configured Maven source.
             exclusiveContent {
                 forRepository {
                     mavenCentral { name = "centralPushPublications" }
@@ -31,6 +35,7 @@ dependencyResolutionManagement {
             }
         }
 
+        google()
         mavenCentral {
             name = "centralDependencies"
             content { excludeGroup("io.github.sosmex.push") }
@@ -38,4 +43,4 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "push-maven-consumer"
+rootProject.name = "kmp-push-maven-consumer"

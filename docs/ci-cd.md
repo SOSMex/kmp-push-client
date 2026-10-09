@@ -14,12 +14,24 @@ The Apple Silicon `macos-15` job verifies:
 
 - all iOS simulator tests;
 - all iOS arm64 device-target compilations;
-- the complete local Maven publication shape for `push-core`, `push-fcm`, `push-onesignal`, and `push-test`.
+- the complete local Maven publication shape for `push-core`, `push-fcm`, `push-onesignal`, and `push-test`;
+- Central-required POM metadata plus root, AAR, KLIB, sources and documentation artifacts;
 - an independent JVM consumer resolving those artifacts from `build/test-maven`, without project dependencies or composite substitution.
+- independent FCM and OneSignal KMP consumers, each resolving exactly one provider from local Maven, compiling Android native gateway symbols, and linking iOS simulator and arm64 device frameworks.
 
 Failed jobs retain test reports for seven days. Successful CI retains the generated local Maven repository for seven days as a review artifact. These artifacts are CI evidence, not a supported package registry or public release.
 
 ## Continuous delivery
+
+### Maven Central
+
+`.github/workflows/publish-maven-central.yml` is manual-only. It checks out an existing semantic tag, proves that the tag commit is reachable from `origin/main`, injects the tag version, reruns the full matrix, builds and inspects unsigned local publications, and runs the independent consumers before credentials enter a single final step.
+
+The workflow must be dispatched from `main`. Its `publish` input defaults to `false`; that uploads a signed deployment for manual review in Central Portal and does not request public release. Setting `publish` to `true` explicitly asks the plugin to publish after Central validation and waits for the `PUBLISHED` deployment state. Maven Central search/download availability remains a separate observation after the workflow completes.
+
+Central signing and repository tasks only exist when `-PcentralRelease=true` is supplied. Normal CI, local test publication, and GitHub Packages publication remain unsigned and require no Central secrets. See [the Central release runbook](central-release.md) for onboarding, secrets, gates, and post-release verification.
+
+### GitHub Packages
 
 `.github/workflows/publish-github-packages.yml` is triggered only by publishing a GitHub Release. The workflow:
 
@@ -32,7 +44,7 @@ Failed jobs retain test reports for seven days. Successful CI retains the genera
 
 Publishing an existing version fails instead of overwriting it. The workflow does not merge branches, create tags, create GitHub Releases, publish to Maven Central, or make the repository/package public.
 
-## Release procedure
+## GitHub Packages release procedure
 
 1. Merge an approved change to `main` and wait for CI to pass.
 2. Create a tag such as `v0.1.0` on the exact validated `main` commit.

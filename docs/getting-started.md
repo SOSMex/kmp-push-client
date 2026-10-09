@@ -106,6 +106,31 @@ building the publications. It verifies JVM artifact consumption, not Android/iOS
 host integration. If publishing with `-PreleaseVersion=...`, pass the same version
 to the consumer with `-PsdkVersion=...`.
 
+CI also compiles an independent KMP consumer once for FCM and once for OneSignal:
+
+```bash
+./gradlew -p integration-tests/kmp-maven-consumer \
+  clean compileAndroidMain \
+  linkDebugFrameworkIosSimulatorArm64 linkDebugFrameworkIosArm64 \
+  -PpushProvider=fcm
+
+./gradlew -p integration-tests/kmp-maven-consumer \
+  clean compileAndroidMain \
+  linkDebugFrameworkIosSimulatorArm64 linkDebugFrameworkIosArm64 \
+  -PpushProvider=onesignal
+```
+
+Each run selects one provider in `commonMain`, exercises that provider's native
+gateway symbols, and links final Apple framework binaries from Maven artifacts.
+The build has no project dependencies or composite substitution. The default
+`sdkRepository=local` mode exclusively resolves `io.github.sosmex.push` from
+`build/test-maven`.
+
+After a version has been observed on Maven Central, repeat each command with
+`-PsdkRepository=central -PsdkVersion=<version>`. In that mode the SDK group is
+resolved exclusively from Maven Central and the local publication repository is
+not configured. See the [Central release runbook](central-release.md).
+
 ## Connect native callbacks
 
 The host owns permission UI, native SDK configuration, callback lifecycle and

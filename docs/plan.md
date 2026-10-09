@@ -69,6 +69,6 @@ A fake/native gateway emits permission, enablement, typed destination, foregroun
 
 ## Open decisions
 
-- Owner approval for public group/artifact coordinates.
+- Central Portal verification for the approved `io.github.sosmex` namespace, user token and signing key remains an operational gate.
 - Whether a future version should own CocoaPods/SPM dependencies or keep host-managed native SDKs.
 - Which durable ledger implementation should be recommended for production consumers.
