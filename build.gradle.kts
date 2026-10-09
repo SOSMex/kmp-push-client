@@ -2,9 +2,9 @@ import com.vanniktech.maven.publish.JavadocJar
 import com.vanniktech.maven.publish.KotlinMultiplatform
 import com.vanniktech.maven.publish.MavenPublishBaseExtension
 import com.vanniktech.maven.publish.SourcesJar
+import com.vanniktech.maven.publish.tasks.JavadocJar as PublicationDocumentationJar
 import org.gradle.api.artifacts.repositories.PasswordCredentials
 import org.gradle.api.publish.PublishingExtension
-import org.gradle.jvm.tasks.Jar
 
 plugins {
     alias(libs.plugins.kotlin.multiplatform) apply false
@@ -102,9 +102,7 @@ allprojects {
 
         // There is no Dokka task yet. Publish useful project documentation rather than
         // an empty Central-required javadoc classifier.
-        tasks.withType<Jar>().matching {
-            it.name in setOf("javadocJar", "emptyJavadocJar", "plainJavadocJar")
-        }.configureEach {
+        tasks.withType<PublicationDocumentationJar>().configureEach {
             from(rootProject.file("README.md"))
             from(rootProject.file("LICENSE"))
             from(rootProject.file("docs")) {
