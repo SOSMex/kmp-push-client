@@ -11,11 +11,13 @@ io.github.sosmex.push:push-onesignal:<version>
 io.github.sosmex.push:push-test:<version>
 ```
 
-The build and manual release workflow are configured, but no Maven Central
-publication has been performed. The Central Portal account exists and namespace
-verification for `io.github.sosmex` is in progress. Do not present `0.1.0` or
-any later version as available until Central resolves it and the remote-only
-consumer checks below pass.
+Version **0.1.0 is published on Maven Central**. The `io.github.sosmex`
+namespace is verified, and publishing credentials and signing secrets are
+configured in GitHub Actions. The first release passed Central validation and
+public download/checksum verification; see the [release record](releases/0.1.0.md).
+
+For later versions, complete the release gates below. Existing credentials do
+not remove the need for owner authorization or post-publication verification.
 
 The `sample` module is never published. GitHub Packages remains an optional,
 separate private registry path.

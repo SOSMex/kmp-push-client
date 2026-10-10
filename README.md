@@ -6,10 +6,9 @@ Use Firebase Cloud Messaging or OneSignal from shared Kotlin Multiplatform code 
 
 The shared API covers permission state, push enablement, registration, foreground notifications and notification opens. FCM uses the same client factory and callback API on Android and iOS; each app still owns its native Firebase setup.
 
-> The source is at `0.1.0`. Packages have not been released to GitHub Packages or Maven Central yet.
+> **0.1.0 is available on [Maven Central](https://repo.maven.apache.org/maven2/io/github/sosmex/push/).** Android AARs, iOS device/simulator KLIBs and JVM artifacts are published. No repository credentials are required.
 
-Start with the [credential-free sample](#try-the-sample), then follow the
-[installation guide](docs/getting-started.md) to consume the source or local Maven artifacts.
+Follow the [installation guide](docs/getting-started.md#install-from-maven-central) to add the library to your app, or try the [credential-free sample](#try-the-sample) first.
 
 ## Why
 
@@ -57,6 +56,8 @@ Add `push-core` and one provider module:
 
 A OneSignal-only app does not need `push-fcm` or either Firebase configuration file. OneSignal still uses FCM under the hood on Google-enabled Android devices, but its SDK handles that connection. On iOS it uses APNs.
 
+Add `google()` and `mavenCentral()` to your dependency repositories, then:
+
 ```kotlin
 commonMain.dependencies {
     implementation("io.github.sosmex.push:push-core:0.1.0")
@@ -65,10 +66,11 @@ commonMain.dependencies {
 }
 ```
 
-These are the planned public module coordinates, not currently downloadable releases. Use the
-[composite-build setup](docs/getting-started.md#use-the-source-in-your-app) to resolve them
-from a checkout today. The same guide includes local Maven publication, consumer repository
-configuration, and independent JVM/Android/iOS consumer checks.
+Gradle selects the platform artifact from these shared coordinates. Add
+`io.github.sosmex.push:push-test:0.1.0` to `commonTest` for test fakes.
+The [installation guide](docs/getting-started.md) also covers source integration,
+local Maven publication and independent JVM/Android/iOS consumer checks.
+Native Firebase or OneSignal setup is still required on each platform.
 
 ## FCM setup
 
@@ -233,7 +235,7 @@ Use JDK 17 and Android SDK 36; complete Apple-target builds also require macOS a
 
 CI runs the JVM, Android and iOS checks on every pull request. Publishing a semantic GitHub Release such as `v0.1.0` triggers publication to the repository's private GitHub Packages registry.
 
-Maven Central distribution is configured but has not been run. It remains blocked on successful namespace, token and signing-key onboarding plus an owner-dispatched release workflow. The workflow stages a deployment for manual Portal review by default; requesting public release requires an explicit input. See the [Central release runbook](docs/central-release.md) and [CI/CD contract](docs/ci-cd.md).
+Version `0.1.0` is published on Maven Central. See the [release verification record](docs/releases/0.1.0.md) for the exact commit, CI evidence and public artifact checks. The workflow stages a deployment for manual Portal review by default; requesting public release requires an explicit input. See the [Central release runbook](docs/central-release.md) and [CI/CD contract](docs/ci-cd.md).
 
 ## More detail
 
