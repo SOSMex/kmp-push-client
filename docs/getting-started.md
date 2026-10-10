@@ -1,8 +1,46 @@
 # Getting started
 
-The source version is 0.1.0. There is no downloadable package release yet.
-Choose a composite build for source integration, or the local Maven repository
-to check artifact consumption. Neither path requires a GitHub token.
+Version **0.1.0** is available from Maven Central. No GitHub or Sonatype token
+is needed to use it. Source and local Maven integration remain available below.
+
+## Install from Maven Central
+
+In your app's `settings.gradle.kts`:
+
+```kotlin
+dependencyResolutionManagement {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+```
+
+In your shared module, choose one provider:
+
+```kotlin
+kotlin {
+    sourceSets {
+        commonMain.dependencies {
+            implementation("io.github.sosmex.push:push-core:0.1.0")
+            implementation("io.github.sosmex.push:push-fcm:0.1.0")
+            // For OneSignal, replace push-fcm with push-onesignal.
+        }
+        commonTest.dependencies {
+            implementation("io.github.sosmex.push:push-test:0.1.0")
+        }
+    }
+}
+```
+
+Gradle selects Android AARs, JVM artifacts, or iOS KLIBs for `iosArm64` and
+`iosSimulatorArm64`. iOS KLIBs are consumed by Kotlin Multiplatform; this release
+is not a standalone Swift package or XCFramework distribution.
+
+The release was built with Kotlin 2.4.10. Use the repository's pinned toolchain
+as the initial compatibility baseline; arbitrary compiler versions have not
+been verified. Continue with [native callback setup](#connect-native-callbacks)
+for Firebase or OneSignal configuration and host responsibilities.
 
 ## Run before configuring a provider
 
@@ -126,8 +164,8 @@ The build has no project dependencies or composite substitution. The default
 `sdkRepository=local` mode exclusively resolves `io.github.sosmex.push` from
 `build/test-maven`.
 
-After a version has been observed on Maven Central, repeat each command with
-`-PsdkRepository=central -PsdkVersion=<version>`. In that mode the SDK group is
+To check the published `0.1.0` artifacts, repeat each command with
+`-PsdkRepository=central -PsdkVersion=0.1.0`. In that mode the SDK group is
 resolved exclusively from Maven Central and the local publication repository is
 not configured. See the [Central release runbook](central-release.md).
 
