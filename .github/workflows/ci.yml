@@ -19,7 +19,7 @@ concurrency:
 jobs:
   jvm-android:
     name: JVM and Android
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, sosmex-linux]
     timeout-minutes: 30
 
     steps:
